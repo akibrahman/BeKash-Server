@@ -51,11 +51,13 @@ export const RegisterController = async (req, res) => {
       } catch (error) {
         console.log(error);
         console.log(error.code);
-        res.status(500).send({
+
+        res.status(400).send({
           msg: "Unique Error",
           error,
           success: false,
         });
+        // throw new Error(error);
         return;
       }
     });
@@ -78,6 +80,8 @@ export const FindUserController = async (req, res) => {
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
       if (err) {
+        const { email } = jwt.decode(token);
+        await UserModel.findOneAndUpdate({ email }, { isLoggedIn: false });
         return res
           .status(402)
           .send({ msg: "Expired or wrong token", success: false });
