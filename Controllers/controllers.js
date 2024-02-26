@@ -11,12 +11,6 @@ export const IndexController = async (req, res) => {
 export const RegisterController = async (req, res) => {
   try {
     const body = await req.body;
-    // const existingUser = await UserModel.find({ email: user.email });
-    // if (existingUser.length != 0) {
-    //   console.log("User Already Exists");
-    //   res.send({ msg: "user exists" });
-    //   return;
-    // }
     bcrypt.hash(body.pin, 10, async (error, hash) => {
       if (error) {
         console.log(error);
@@ -71,6 +65,91 @@ export const RegisterController = async (req, res) => {
       msg: "User Registration Error in Backend",
       error,
       success: false,
+    });
+  }
+};
+
+//! Find User from DB
+export const FindUserController = async (req, res) => {
+  try {
+    const token = req?.cookies?.token;
+    if (!token) {
+      return res.status(401).send({ msg: "No Token", success: false });
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
+      if (err) {
+        return res
+          .success(402)
+          .send({ msg: "Expired or wrong token", status: false });
+      }
+      console.log(decoded);
+      const user = await UserModel.find({ email: decoded.email });
+      res.send({ user: user[0], success: true });
+    });
+  } catch (error) {
+    console.log(first);
+    res
+      .status(500)
+      .send({ msg: "Finding user problem", success: false, error });
+  }
+};
+
+//! Login User from web
+export const LogInUserController = async (req, res) => {
+  try {
+    const user = await req.body;
+    const phoneRegex = /^(?:\+88|88)?01[3-9]\d{8}$/;
+    let query = {};
+    if (phoneRegex.test(user.user)) {
+      const numericOnly = user.user.replace(/\D/g, "");
+      if (numericOnly.startsWith("88")) {
+        query = { mobileNumber: "+" + numericOnly };
+      } else if (numericOnly.startsWith("01") && numericOnly.length === 11) {
+        query = { mobileNumber: "+88" + numericOnly };
+      } else {
+        query = { mobileNumber: user.user };
+      }
+    } else {
+      query = { email: user.user };
+    }
+    const data = await UserModel.findOne(query);
+    console.log(data);
+    if (data.length == 0) {
+      res
+        .status(500)
+        .send({ msg: "Email or Number is incorrect", success: false });
+      return;
+    }
+    bcrypt.compare(user.pin, data.pin, (err, result) => {
+      if (err) {
+        res
+          .status(500)
+          .send({ msg: "Something went wrong", success: false, err });
+      } else if (result) {
+        const token = jwt.sign(
+          { email: data.email },
+          process.env.ACCESS_TOKEN_SECRET,
+          {
+            expiresIn: "1h",
+          }
+        );
+        res
+          .cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+          })
+          .send({ msg: "Password is correct", success: true, user: data });
+      } else {
+        res.send({ msg: "Password is incorrect", success: false });
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      msg: "Login problem in Backend",
+      success: false,
+      error,
     });
   }
 };
