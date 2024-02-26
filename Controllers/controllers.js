@@ -79,8 +79,8 @@ export const FindUserController = async (req, res) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
       if (err) {
         return res
-          .success(402)
-          .send({ msg: "Expired or wrong token", status: false });
+          .status(402)
+          .send({ msg: "Expired or wrong token", success: false });
       }
       console.log(decoded);
       const user = await UserModel.find({ email: decoded.email });
@@ -113,19 +113,36 @@ export const LogInUserController = async (req, res) => {
       query = { email: user.user };
     }
     const data = await UserModel.findOne(query);
-    console.log(data);
-    if (data.length == 0) {
-      res
-        .status(500)
-        .send({ msg: "Email or Number is incorrect", success: false });
+
+    if (!data) {
+      res.status(500).send({
+        msg: "Email or Number is incorrect",
+        success: false,
+        code: 101,
+      });
       return;
     }
-    bcrypt.compare(user.pin, data.pin, (err, result) => {
+
+    bcrypt.compare(user.pin, data.pin, async (err, result) => {
       if (err) {
-        res
-          .status(500)
-          .send({ msg: "Something went wrong", success: false, err });
+        res.status(500).send({
+          msg: "Wrong PIN",
+          success: false,
+          err,
+          code: 102,
+        });
+        return;
       } else if (result) {
+        if (data.isLoggedIn) {
+          res.status(500).send({
+            msg: "Logged in to another Device",
+            success: false,
+            code: 103,
+          });
+          return;
+        }
+        data.isLoggedIn = true;
+        await data.save();
         const token = jwt.sign(
           { email: data.email },
           process.env.ACCESS_TOKEN_SECRET,
@@ -152,4 +169,17 @@ export const LogInUserController = async (req, res) => {
       error,
     });
   }
+};
+
+//! Logout User from web
+export const LogOutUserController = async (req, res) => {
+  const { email } = await req.body;
+  await UserModel.findOneAndUpdate({ email }, { isLoggedIn: false });
+  res
+    .clearCookie("token", {
+      maxAge: 0,
+      secure: true,
+      sameSite: "none",
+    })
+    .send({ success: true });
 };
