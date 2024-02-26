@@ -34,24 +34,36 @@ export const RegisterController = async (req, res) => {
           expiresIn: "1h",
         }
       );
-      const registeredUser = await UserModel.create({
-        ...body,
-        pin: hash,
-        isRoleVerified: body.role === "user" ? true : false,
-        balance: body.role === "user" ? 40 : 100000,
-        isLoggedIn: true,
-      });
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-        })
-        .send({
-          msg: "User Registered & Token created",
-          user: registeredUser,
-          success: true,
+      console.log("----------------------------------------------------------");
+      try {
+        const registeredUser = await UserModel.create({
+          ...body,
+          pin: hash,
+          isRoleVerified: body.role === "user" ? true : false,
+          balance: body.role === "user" ? 40 : 100000,
+          isLoggedIn: true,
         });
+        res
+          .cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+          })
+          .send({
+            msg: "User Registered & Token created",
+            user: registeredUser,
+            success: true,
+          });
+      } catch (error) {
+        console.log(error);
+        console.log(error.code);
+        res.status(500).send({
+          msg: "Unique Error",
+          error,
+          success: false,
+        });
+        return;
+      }
     });
   } catch (error) {
     console.log(error);
