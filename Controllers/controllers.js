@@ -67,6 +67,16 @@ export const RegisterController = async (req, res) => {
             user: registeredUser,
             success: true,
           });
+        await TransactionModel.create({
+          senderNumber: "#",
+          receiverNumber: body.mobileNumber,
+          transactionID: new mongoose.Types.ObjectId(),
+          createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+          amount: body.role === "user" ? 40 : 100000,
+          methode: "Registration Bonus",
+          for: "user",
+          type: "main",
+        });
       } catch (error) {
         console.log(error);
         console.log(error.code);
@@ -206,13 +216,31 @@ export const LogOutUserController = async (req, res) => {
     .send({ success: true });
 };
 
+//! Get All Agents
 export const GetAgentsController = async (req, res) => {
   try {
-    const agents = await UserModel.find({ role: "agent" });
+    const { number } = req.query;
+    const regex = new RegExp(number, "i");
+    const agents = await UserModel.find({ role: "agent", mobileNumber: regex });
     res.send({ msg: "Agents", success: true, agents });
   } catch (error) {
     console.log(error);
     res.send({ msg: "Failed to fetch Agents", success: false, error });
+  }
+};
+
+//! Get All Users
+export const GetUsersController = async (req, res) => {
+  try {
+    const { number } = req.query;
+    const regex = new RegExp(number, "i");
+    const users = await UserModel.find({ role: "user", mobileNumber: regex });
+    console.log("---------------------");
+    console.log(users);
+    res.send({ msg: "Users", success: true, users });
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: "Failed to fetch Users", success: false, error });
   }
 };
 
@@ -252,8 +280,50 @@ export const BlockUserController = async (req, res) => {
     res.send({ msg: "User Blocation Error", success: false, error });
   }
 };
-
-export const AddTransactionController = async (req, res) => {};
+//! Transactions User-Agent
+export const TransactionsController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const user = await UserModel.findById(id);
+    const transactions = await TransactionModel.find({
+      $or: [
+        { senderNumber: user.mobileNumber },
+        { receiverNumber: user.mobileNumber },
+      ],
+      $or: [
+        { for: user.role },
+        { for: user.role == "user" ? "useradmin" : "" },
+        { for: "useragent" },
+      ],
+    })
+      .sort({ _id: -1 })
+      .limit(100);
+    return res.send({ msg: "Transactions Found", transactions, success: true });
+  } catch (error) {
+    console.log("Backend Error for fetching Transactions");
+    console.log(error);
+    return res.send({
+      msg: "Backend Error for fetching Transactions",
+      error,
+      success: false,
+    });
+  }
+};
+//! Transactions Admin
+export const AllTransactionsController = async (req, res) => {
+  try {
+    const transactions = await TransactionModel.find({}).sort({ _id: -1 });
+    return res.send({ msg: "Transactions Found", transactions, success: true });
+  } catch (error) {
+    console.log("Backend Error for fetching Transactions");
+    console.log(error);
+    return res.send({
+      msg: "Backend Error for fetching Transactions",
+      error,
+      success: false,
+    });
+  }
+};
 //! Send Money-----------------
 export const SendMoneyController = async (req, res) => {
   const body = await req.body;
@@ -305,7 +375,7 @@ export const SendMoneyController = async (req, res) => {
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: 5,
       methode: "Send Money Charge",
-      for: "admin",
+      for: "useradmin",
       type: "charge",
     });
   }
@@ -362,7 +432,7 @@ export const CashOutController = async (req, res) => {
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: body.amount,
       methode: "Cash Out",
-      for: "user",
+      for: "useragent",
       type: "main",
     });
     //! Cash Out Charge Transaction
@@ -444,7 +514,7 @@ export const CashInController = async (req, res) => {
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: body.amount,
       methode: "Cash In",
-      for: "user",
+      for: "useragent",
       type: "main",
     });
     return res.send({

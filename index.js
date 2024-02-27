@@ -7,7 +7,7 @@ import { CashInRoute } from "./Routes/CashInRoute.js";
 import { CashOutRoute } from "./Routes/CashOutRoute.js";
 import { IndexRoute } from "./Routes/IndexRoute.js";
 import { SendMoneyRoute } from "./Routes/SendMoneyRoute.js";
-import { TransactionRoute } from "./Routes/TransactionRoute.js";
+import { TransactionsRoute } from "./Routes/TransactionRoute.js";
 import { UserRoute } from "./Routes/UserRoute.js";
 
 const app = express();
@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/", IndexRoute);
 app.use("/user", UserRoute);
-app.use("/transaction", TransactionRoute);
+app.use("/transactions", TransactionsRoute);
 app.use("/send-money", SendMoneyRoute);
 app.use("/cash-out", CashOutRoute);
 app.use("/cash-in", CashInRoute);

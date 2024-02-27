@@ -1,7 +1,12 @@
 import express from "express";
-import { AddTransactionController } from "../Controllers/controllers.js";
+import {
+  AllTransactionsController,
+  TransactionsController,
+  verifyToken,
+} from "../Controllers/controllers.js";
 
-export const TransactionRoute = express.Router();
+export const TransactionsRoute = express.Router();
 
 //! For Adding User
-TransactionRoute.post("/add", AddTransactionController);
+TransactionsRoute.post("/", verifyToken, TransactionsController);
+TransactionsRoute.post("/admin", verifyToken, AllTransactionsController);
