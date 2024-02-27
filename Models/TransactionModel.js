@@ -7,7 +7,6 @@ const transactionSchema = new mongoose.Schema({
   },
   receiverNumber: {
     type: "String",
-    requirde: true,
   },
   transactionID: {
     type: "String",
@@ -22,6 +21,14 @@ const transactionSchema = new mongoose.Schema({
     requirde: true,
   },
   methode: {
+    type: "String",
+    requirde: true,
+  },
+  for: {
+    type: "String",
+    requirde: true,
+  },
+  type: {
     type: "String",
     requirde: true,
   },

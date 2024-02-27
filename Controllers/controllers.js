@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import { TransactionModel } from "../Models/TransactionModel.js";
 import { UserModel } from "../Models/UserModel.js";
 
 //! Root Response
@@ -286,6 +288,28 @@ export const SendMoneyController = async (req, res) => {
     admin.balance = admin.balance + 5;
     await admin.save();
   }
+  const transactionID = new mongoose.Types.ObjectId();
+  await TransactionModel.create({
+    senderNumber: sender.mobileNumber,
+    receiverNumber: receiver.mobileNumber,
+    transactionID,
+    createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+    amount: body.amount,
+    methode: "Send Money",
+    for: "user",
+    type: "main",
+  });
+  if (body.amount > 100) {
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: 5,
+      methode: "Send Money Charge",
+      for: "admin",
+      type: "charge",
+    });
+  }
   return res.send({ msg: "Send Money Completed", success: true });
 };
 //! Cash Out ----------------
@@ -331,6 +355,50 @@ export const CashOutController = async (req, res) => {
     await receiver.save();
     admin.balance += adminp;
     await admin.save();
+    const transactionID = new mongoose.Types.ObjectId();
+    //! Cash Out Transaction
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      receiverNumber: receiver.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: body.amount,
+      methode: "Cash Out",
+      for: "user",
+      type: "main",
+    });
+    //! Cash Out Charge Transaction
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: parseFloat((body.amount * (1.5 / 100)).toFixed(2)),
+      methode: "Cash Out Charge",
+      for: "user",
+      type: "charge",
+    });
+    //! Cash Out Bonus to Agent Transaction
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      receiverNumber: receiver.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: parseFloat((body.amount * (1.0 / 100)).toFixed(2)),
+      methode: "Cash Out Bonus to Agent",
+      for: "agent",
+      type: "charge",
+    });
+    //! Cash Out Bonus to Admin Transaction
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      receiverNumber: admin.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: parseFloat((body.amount * (0.5 / 100)).toFixed(2)),
+      methode: "Cash Out Bonus to Admin",
+      for: "admin",
+      type: "charge",
+    });
     return res.send({ success: true, msg: "Cash out Completed Successfully" });
   } catch (error) {
     console.log(error);
