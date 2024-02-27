@@ -4,6 +4,8 @@ import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
 import { IndexRoute } from "./Routes/IndexRoute.js";
+import { SendMoneyRoute } from "./Routes/SendMoneyRoute.js";
+import { TransactionRoute } from "./Routes/TransactionRoute.js";
 import { UserRoute } from "./Routes/UserRoute.js";
 
 const app = express();
@@ -22,8 +24,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/", IndexRoute);
 app.use("/user", UserRoute);
-// app.use("/house", HouseRoute);
-// app.use("/booking", BookingRoute);
+app.use("/transaction", TransactionRoute);
+app.use("/send-money", SendMoneyRoute);
 
 app.listen(port, () => {
   console.log(`Bekash Server is Running on Port - ${port}`);

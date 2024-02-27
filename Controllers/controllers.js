@@ -7,6 +7,23 @@ export const IndexController = async (req, res) => {
   res.send("BeKash Server is Running");
 };
 
+//! Token VerifY
+export const verifyToken = async (req, res, next) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    console.log("Token Middleware Error");
+    return res.status(401).send({ success: false, message: "Unauthorized" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      console.log("Token Middleware Error");
+      return res.status(402).send({ success: false, message: "Unauthorized" });
+    }
+    req.jwt = decoded;
+    next();
+  });
+};
+
 //! Registration API
 export const RegisterController = async (req, res) => {
   try {
@@ -86,7 +103,6 @@ export const FindUserController = async (req, res) => {
           .status(402)
           .send({ msg: "Expired or wrong token", success: false });
       }
-      console.log(decoded);
       const user = await UserModel.find({ email: decoded.email });
       res.send({ user: user[0], success: true });
     });
@@ -233,4 +249,42 @@ export const BlockUserController = async (req, res) => {
     console.log(error);
     res.send({ msg: "User Blocation Error", success: false, error });
   }
+};
+
+export const AddTransactionController = async (req, res) => {};
+
+export const SendMoneyController = async (req, res) => {
+  const body = await req.body;
+  const decode = await req.jwt;
+  if (body.email != decode.email) {
+    console.log("Wrong User");
+    return res.status(402).send({ success: false, message: "Unauthorized" });
+  }
+  const receiver = await UserModel.findOne({ mobileNumber: body.mobileNumber });
+  const sender = await UserModel.findOne({ email: body.email });
+  const admin = await UserModel.findOne({ role: "admin" });
+  if (!receiver) {
+    console.log("No such a User");
+    return res.send({ success: false, msg: "Wrong Number" });
+  }
+  const pinData = await bcrypt.compare(body.pin, sender.pin);
+  if (!pinData) {
+    console.log("Wrong PIN");
+    return res.send({ success: false, msg: "Wrong PIN" });
+  }
+  if (sender.balance < (body.amount > 100 ? body.amount + 5 : body.amount)) {
+    console.log("Insufficient Balance");
+    return res.send({ success: false, msg: "Insufficient Balance" });
+  }
+  sender.balance =
+    sender.balance -
+    parseInt(body.amount > 100 ? body.amount + 5 : body.amount);
+  await sender.save();
+  receiver.balance = receiver.balance + body.amount;
+  await receiver.save();
+  if (body.amount > 100) {
+    admin.balance = admin.balance + 5;
+    await admin.save();
+  }
+  return res.send({ msg: "Send Money Completed", success: true });
 };
