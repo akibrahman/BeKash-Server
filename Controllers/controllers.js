@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { CashRequestModel } from "../Models/CashRequestModel.js";
 import { TransactionModel } from "../Models/TransactionModel.js";
 import { UserModel } from "../Models/UserModel.js";
 
@@ -575,5 +576,100 @@ export const SystemBalanceController = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.send({ success: false, error });
+  }
+};
+
+//! Adding Cash request
+export const AddCashRequestController = async (req, res) => {
+  try {
+    const { id, name, email, number } = await req.body;
+    await CashRequestModel.create({
+      agentId: id,
+      agentEmail: email,
+      agentName: name,
+      agentNumber: number,
+      status: "processing",
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+    });
+    return res.send({ msg: "Cash Request Created", success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      msg: "Cash Request adding Problem",
+      success: false,
+      error,
+    });
+  }
+};
+
+//! Get Cash requests
+export const GetCashRequestsController = async (req, res) => {
+  try {
+    const reqs = await CashRequestModel.find();
+    return res.send({ msg: "Cash Requests", success: true, reqs });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      msg: "Getting Cash Requests Error",
+      success: false,
+      error,
+    });
+  }
+};
+
+//! Get Cash requests
+export const EditCashRequestController = async (req, res) => {
+  try {
+    const { id, status } = await req.body;
+    await CashRequestModel.findByIdAndUpdate(id, { status });
+    return res.send({ msg: "Cash Requests", success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      msg: "Editing Cash Request Error",
+      success: false,
+      error,
+    });
+  }
+};
+
+//! Approve Cash Request
+export const ApproveCashRequestController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const requ = await CashRequestModel.findById(id);
+    const agent = await UserModel.findOne({ _id: requ.agentId });
+    agent.balance += 100000;
+    await agent.save();
+    await TransactionModel.create({
+      senderNumber: "BeKash",
+      receiverNumber: agent.mobileNumber,
+      transactionID: new mongoose.Types.ObjectId(),
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: 100000,
+      methode: "Cash Request",
+      for: "agent",
+      type: "main",
+    });
+    requ.status = "approved";
+    await requ.save();
+    return res.send({ msg: "Cash Request Approved", success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({ msg: "Cash Request Approve Error", success: false });
+  }
+};
+
+//! Decline Cash Request
+export const DeclineCashRequestController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const requ = await CashRequestModel.findById(id);
+    requ.status = "declined";
+    await requ.save();
+    return res.send({ msg: "Cash Request Declined", success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({ msg: "Cash Request Decline Error", success: false });
   }
 };

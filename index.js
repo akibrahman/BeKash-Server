@@ -5,6 +5,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { CashInRoute } from "./Routes/CashInRoute.js";
 import { CashOutRoute } from "./Routes/CashOutRoute.js";
+import { CashRequestRoute } from "./Routes/CashRequestRoute.js";
 import { IndexRoute } from "./Routes/IndexRoute.js";
 import { SendMoneyRoute } from "./Routes/SendMoneyRoute.js";
 import { SystemBalanceRoute } from "./Routes/SystemBalanceRoute.js";
@@ -32,6 +33,7 @@ app.use("/send-money", SendMoneyRoute);
 app.use("/cash-out", CashOutRoute);
 app.use("/cash-in", CashInRoute);
 app.use("/system-balance", SystemBalanceRoute);
+app.use("/cash-request", CashRequestRoute);
 
 app.listen(port, () => {
   console.log(`Bekash Server is Running on Port - ${port}`);
