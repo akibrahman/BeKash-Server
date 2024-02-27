@@ -346,6 +346,22 @@ export const UserWiseTransactionsController = async (req, res) => {
     });
   }
 };
+//! Transactions By ID
+export const IdTransactionsController = async (req, res) => {
+  try {
+    const { id } = await req.query;
+    const transaction = await TransactionModel.findById(id);
+    return res.send({ msg: "Transactions Found", transaction, success: true });
+  } catch (error) {
+    console.log("Backend Error for fetching Transactions");
+    console.log(error);
+    return res.send({
+      msg: "Backend Error for fetching Transactions",
+      error,
+      success: false,
+    });
+  }
+};
 //! Send Money-----------------
 export const SendMoneyController = async (req, res) => {
   const body = await req.body;
