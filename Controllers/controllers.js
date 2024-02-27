@@ -252,7 +252,7 @@ export const BlockUserController = async (req, res) => {
 };
 
 export const AddTransactionController = async (req, res) => {};
-
+//! Send Money-----------------
 export const SendMoneyController = async (req, res) => {
   const body = await req.body;
   const decode = await req.jwt;
@@ -287,4 +287,53 @@ export const SendMoneyController = async (req, res) => {
     await admin.save();
   }
   return res.send({ msg: "Send Money Completed", success: true });
+};
+//! Cash Out ----------------
+export const CashOutController = async (req, res) => {
+  try {
+    const body = await req.body;
+    const decode = await req.jwt;
+    if (body.email != decode.email) {
+      console.log("Wrong User");
+      return res.status(402).send({ success: false, message: "Unauthorized" });
+    }
+    const receiver = await UserModel.findOne({
+      mobileNumber: body.mobileNumber,
+      role: "agent",
+    });
+    if (!receiver) {
+      console.log("No such a Receiver");
+      return res.send({ success: false, msg: "Wrong Number" });
+    }
+    const sender = await UserModel.findOne({ email: body.email });
+    const admin = await UserModel.findOne({ role: "admin" });
+    const pinData = await bcrypt.compare(body.pin, sender.pin);
+    if (!pinData) {
+      console.log("Wrong PIN");
+      return res.send({ success: false, msg: "Wrong PIN" });
+    }
+    if (sender.balance < (body.amount + body.amount * (1.5 / 100)).toFixed(2)) {
+      console.log("Insufficient Balance");
+      return res.send({ success: false, msg: "Insufficient Balance" });
+    }
+
+    const senderm = parseFloat(
+      (body.amount + body.amount * (1.5 / 100)).toFixed(2)
+    );
+    const agentp = parseFloat(
+      (body.amount + body.amount * (1.0 / 100)).toFixed(2)
+    );
+    const adminp = parseFloat((body.amount * (0.5 / 100)).toFixed(2));
+
+    sender.balance -= senderm;
+    await sender.save();
+    receiver.balance += agentp;
+    await receiver.save();
+    admin.balance += adminp;
+    await admin.save();
+    return res.send({ success: true, msg: "Cash out Completed Successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.send({ success: false, msg: "Backend Error, try again", error });
+  }
 };
