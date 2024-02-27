@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
+import { CashInRoute } from "./Routes/CashInRoute.js";
 import { CashOutRoute } from "./Routes/CashOutRoute.js";
 import { IndexRoute } from "./Routes/IndexRoute.js";
 import { SendMoneyRoute } from "./Routes/SendMoneyRoute.js";
@@ -28,6 +29,7 @@ app.use("/user", UserRoute);
 app.use("/transaction", TransactionRoute);
 app.use("/send-money", SendMoneyRoute);
 app.use("/cash-out", CashOutRoute);
+app.use("/cash-in", CashInRoute);
 
 app.listen(port, () => {
   console.log(`Bekash Server is Running on Port - ${port}`);

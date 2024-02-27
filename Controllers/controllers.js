@@ -288,11 +288,10 @@ export const SendMoneyController = async (req, res) => {
     admin.balance = admin.balance + 5;
     await admin.save();
   }
-  const transactionID = new mongoose.Types.ObjectId();
   await TransactionModel.create({
     senderNumber: sender.mobileNumber,
     receiverNumber: receiver.mobileNumber,
-    transactionID,
+    transactionID: new mongoose.Types.ObjectId(),
     createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
     amount: body.amount,
     methode: "Send Money",
@@ -302,7 +301,7 @@ export const SendMoneyController = async (req, res) => {
   if (body.amount > 100) {
     await TransactionModel.create({
       senderNumber: sender.mobileNumber,
-      transactionID,
+      transactionID: new mongoose.Types.ObjectId(),
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: 5,
       methode: "Send Money Charge",
@@ -355,12 +354,11 @@ export const CashOutController = async (req, res) => {
     await receiver.save();
     admin.balance += adminp;
     await admin.save();
-    const transactionID = new mongoose.Types.ObjectId();
     //! Cash Out Transaction
     await TransactionModel.create({
       senderNumber: sender.mobileNumber,
       receiverNumber: receiver.mobileNumber,
-      transactionID,
+      transactionID: new mongoose.Types.ObjectId(),
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: body.amount,
       methode: "Cash Out",
@@ -370,7 +368,7 @@ export const CashOutController = async (req, res) => {
     //! Cash Out Charge Transaction
     await TransactionModel.create({
       senderNumber: sender.mobileNumber,
-      transactionID,
+      transactionID: new mongoose.Types.ObjectId(),
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: parseFloat((body.amount * (1.5 / 100)).toFixed(2)),
       methode: "Cash Out Charge",
@@ -381,7 +379,7 @@ export const CashOutController = async (req, res) => {
     await TransactionModel.create({
       senderNumber: sender.mobileNumber,
       receiverNumber: receiver.mobileNumber,
-      transactionID,
+      transactionID: new mongoose.Types.ObjectId(),
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: parseFloat((body.amount * (1.0 / 100)).toFixed(2)),
       methode: "Cash Out Bonus to Agent",
@@ -392,7 +390,7 @@ export const CashOutController = async (req, res) => {
     await TransactionModel.create({
       senderNumber: sender.mobileNumber,
       receiverNumber: admin.mobileNumber,
-      transactionID,
+      transactionID: new mongoose.Types.ObjectId(),
       createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
       amount: parseFloat((body.amount * (0.5 / 100)).toFixed(2)),
       methode: "Cash Out Bonus to Admin",
@@ -400,6 +398,59 @@ export const CashOutController = async (req, res) => {
       type: "charge",
     });
     return res.send({ success: true, msg: "Cash out Completed Successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.send({ success: false, msg: "Backend Error, try again", error });
+  }
+};
+
+//! Cash In Controller
+export const CashInController = async (req, res) => {
+  try {
+    const body = await req.body;
+    const decode = await req.jwt;
+    if (body.email != decode.email) {
+      console.log("Wrong User");
+      return res.status(402).send({ success: false, message: "Unauthorized" });
+    }
+    const receiver = await UserModel.findOne({
+      mobileNumber: body.mobileNumber,
+      role: "user",
+    });
+    if (!receiver) {
+      console.log("No such a Receiver");
+      return res.send({ success: false, msg: "Wrong Number" });
+    }
+    const sender = await UserModel.findOne({ email: body.email });
+    // const admin = await UserModel.findOne({ role: "admin" });
+    const pinData = await bcrypt.compare(body.pin, sender.pin);
+    if (!pinData) {
+      console.log("Wrong PIN");
+      return res.send({ success: false, msg: "Wrong PIN" });
+    }
+    if (sender.balance < body.amount) {
+      console.log("Insufficient Balance");
+      return res.send({ success: false, msg: "Insufficient Balance" });
+    }
+    sender.balance -= body.amount;
+    await sender.save();
+    receiver.balance += body.amount;
+    await receiver.save();
+    const transactionID = new mongoose.Types.ObjectId();
+    await TransactionModel.create({
+      senderNumber: sender.mobileNumber,
+      receiverNumber: receiver.mobileNumber,
+      transactionID,
+      createdAt: new Date().toISOString([], { timeZone: "Asia/Dhaka" }),
+      amount: body.amount,
+      methode: "Cash In",
+      for: "user",
+      type: "main",
+    });
+    return res.send({
+      success: true,
+      msg: "Cash In Completed Successfully",
+    });
   } catch (error) {
     console.log(error);
     return res.send({ success: false, msg: "Backend Error, try again", error });
