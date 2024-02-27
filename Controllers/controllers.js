@@ -324,6 +324,28 @@ export const AllTransactionsController = async (req, res) => {
     });
   }
 };
+//! Transactions User
+export const UserWiseTransactionsController = async (req, res) => {
+  try {
+    const { number } = await req.body;
+    const numericOnly = number.replace(/\D/g, "");
+    const transactions = await TransactionModel.find({
+      $or: [
+        { senderNumber: "+" + numericOnly },
+        { receiverNumber: "+" + numericOnly },
+      ],
+    }).sort({ _id: -1 });
+    return res.send({ msg: "Transactions Found", transactions, success: true });
+  } catch (error) {
+    console.log("Backend Error for fetching Transactions");
+    console.log(error);
+    return res.send({
+      msg: "Backend Error for fetching Transactions",
+      error,
+      success: false,
+    });
+  }
+};
 //! Send Money-----------------
 export const SendMoneyController = async (req, res) => {
   const body = await req.body;
