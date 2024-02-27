@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema({
     type: "Boolean",
     required: true,
   },
+  isBlocked: {
+    type: "Boolean",
+    default: false,
+  },
   mobileNumber: {
     type: "String",
     required: true,

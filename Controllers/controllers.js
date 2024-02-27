@@ -187,3 +187,50 @@ export const LogOutUserController = async (req, res) => {
     })
     .send({ success: true });
 };
+
+export const GetAgentsController = async (req, res) => {
+  try {
+    const agents = await UserModel.find({ role: "agent" });
+    res.send({ msg: "Agents", success: true, agents });
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: "Failed to fetch Agents", success: false, error });
+  }
+};
+
+export const ApproveAgentController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const result = await UserModel.findByIdAndUpdate(id, {
+      isRoleVerified: true,
+      isBlocked: false,
+    });
+    res.send({ msg: "Agent Approved", success: true, result });
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: "Agent Approval Error", success: false, error });
+  }
+};
+export const RejectAgentController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const result = await UserModel.findByIdAndUpdate(id, {
+      isRoleVerified: false,
+      isBlocked: true,
+    });
+    res.send({ msg: "Agent Rejected", success: true, result });
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: "Agent Rejection Error", success: false, error });
+  }
+};
+export const BlockUserController = async (req, res) => {
+  try {
+    const { id } = await req.body;
+    const result = await UserModel.findByIdAndUpdate(id, { isBlocked: true });
+    res.send({ msg: "User Blocked", success: true, result });
+  } catch (error) {
+    console.log(error);
+    res.send({ msg: "User Blocation Error", success: false, error });
+  }
+};
