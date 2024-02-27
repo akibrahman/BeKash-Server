@@ -7,6 +7,7 @@ import { CashInRoute } from "./Routes/CashInRoute.js";
 import { CashOutRoute } from "./Routes/CashOutRoute.js";
 import { IndexRoute } from "./Routes/IndexRoute.js";
 import { SendMoneyRoute } from "./Routes/SendMoneyRoute.js";
+import { SystemBalanceRoute } from "./Routes/SystemBalanceRoute.js";
 import { TransactionsRoute } from "./Routes/TransactionRoute.js";
 import { UserRoute } from "./Routes/UserRoute.js";
 
@@ -30,6 +31,7 @@ app.use("/transactions", TransactionsRoute);
 app.use("/send-money", SendMoneyRoute);
 app.use("/cash-out", CashOutRoute);
 app.use("/cash-in", CashInRoute);
+app.use("/system-balance", SystemBalanceRoute);
 
 app.listen(port, () => {
   console.log(`Bekash Server is Running on Port - ${port}`);

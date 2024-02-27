@@ -564,3 +564,16 @@ export const CashInController = async (req, res) => {
     return res.send({ success: false, msg: "Backend Error, try again", error });
   }
 };
+
+//! System Balance
+export const SystemBalanceController = async (req, res) => {
+  try {
+    const users = await UserModel.find();
+    const allUsers = users.filter((user) => user.role !== "admin");
+    const systemBalance = allUsers.reduce((a, c) => a + c.balance, 0);
+    return res.send({ success: true, systemBalance });
+  } catch (error) {
+    console.log(error);
+    return res.send({ success: false, error });
+  }
+};
