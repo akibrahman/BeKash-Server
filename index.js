@@ -19,7 +19,7 @@ mongoose.connect(process.env.MONGO_URI, { dbName: process.env.DB_NAME });
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://bekash.vercel.app"],
     credentials: true,
     optionsSuccessStatus: 200,
   })
